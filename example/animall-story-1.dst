@@ -1,0 +1,15 @@
+story Animal_Story_1
+for book Animal_Book
+
+introduce
+    agent Fox icon: Fox_Icon;
+    agent Fox icon: Elephant_Icon;
+    work object Pencil icon: Pencil_Icon;
+
+tell
+    - Fox sends Paper via Mail to Elephant;
+    - Rabbit "writes on" Paper with Pencil to Fox;
+    - Rabbit writes_on Paper with Pencil to Fox;
+    - Fox goes Fox;
+
+note "Never mind" --> Mail --> Pencil;

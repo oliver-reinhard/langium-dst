@@ -1,0 +1,15 @@
+{
+    "projectName": "DomainStorytelling",
+    "languages": [{
+        "id": "domain-storytelling",
+        "grammar": "src/language/domain-storytelling.langium",
+        "fileExtensions": [".dst"],
+        "textMate": {
+            "out": "syntaxes/domain-storytelling.tmLanguage.json"
+        },
+        "monarch": {
+            "out": "src/syntaxes/domain-storytelling.monarch.ts"
+        }
+    }],
+    "out": "src/language/generated"
+}
