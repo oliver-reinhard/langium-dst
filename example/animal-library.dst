@@ -3,6 +3,8 @@ define
     icon Fox_Icon url: "bla";
     icon Rabbit_Icon;
     icon Elephant_Icon;
+    icon Mouse_Icon;
+
     icon Paper_Icon;
     icon Pencil_Icon;
     icon Mail_Icon;

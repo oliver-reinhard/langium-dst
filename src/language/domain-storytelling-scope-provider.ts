@@ -6,25 +6,12 @@
 
 import type { ReferenceInfo, Scope } from 'langium';
 import { DefaultScopeProvider, EMPTY_SCOPE } from 'langium';
-import { AgentDeclaration, isAgentDeclaration, isResourceDeclaration, isSentence, isStory, isStoryBook, isWorkObject, ResourceDeclaration, Sentence, WorkObject } from './generated/ast.js';
-import { LangiumServices } from 'langium/lsp';
+import { Agent, AgentDeclaration, isActivityClause, isAgent, isAgentDeclaration, isResource, isResourceDeclaration, isStory, isStoryBook, isWorkObjectDeclaration, Resource, ResourceDeclaration, WorkObjectDeclaration } from './generated/ast.js';
 
 /**
  * Special scope provider that matches symbol names regardless of lowercase or uppercase.
  */
 export class DomainStorytellingScopeProvider extends DefaultScopeProvider {
-
-    constructor(services:LangiumServices) {
-        super(services);
-    }
-
-    // protected override createScope(elements: Iterable<AstNodeDescription>, outerScope: Scope, options?: ScopeOptions): Scope {
-    //     return new StreamScope(stream(elements), outerScope, { ...options, caseInsensitive: true });
-    // }
-
-    // protected override getGlobalScope(referenceType: string): Scope {
-    //     return this.globalScopeCache.get(referenceType, () => new MapScope(this.indexManager.allElements(referenceType), undefined, { caseInsensitive: true }));
-    // }
 
     override getScope(context: ReferenceInfo): Scope {
         const container = context.container;
@@ -33,12 +20,12 @@ export class DomainStorytellingScopeProvider extends DefaultScopeProvider {
             return this.getIconScope(context, container);
         }
 
-        if (context.property === 'initiator' && isSentence(container)) {
-            return this. getInitiatingAgentScope(container);
+        if (context.property === 'resource' && isAgent(container)) {
+            return this. getAgentScope(container);
         }
         
-        if (context.property === 'resource' && isWorkObject(container)) {
-            return this. getWorkObjectScope(container);
+        if (context.property === 'resource' && isResource(container)) {
+            return this. getResourceScope(container);
         }
 
         return super.getScope(context);
@@ -59,10 +46,10 @@ export class DomainStorytellingScopeProvider extends DefaultScopeProvider {
     /**
      * Returns all Agent declarations from the containing Story AND from its referenced StoryBook.
      */
-    protected getInitiatingAgentScope(sentence: Sentence) : Scope {
-        const story = sentence.$container;
+    protected getAgentScope(agent: Agent) : Scope {
+        const story = agent.$container.$container;
         const book = story.book?.ref;
-        const outerScope = (book != null) ? this.createScopeForNodes(book.declarations.filter((a): a is AgentDeclaration => isAgentDeclaration(a))) : EMPTY_SCOPE;
+        const outerScope = (book != null) ? this.createScopeForNodes(book.declarations.filter((d): d is AgentDeclaration => isAgentDeclaration(d))) : EMPTY_SCOPE;
         return this.createScopeForNodes(story.declarations.filter((a): a is AgentDeclaration => isAgentDeclaration(a)), outerScope);
     }
 
@@ -70,11 +57,22 @@ export class DomainStorytellingScopeProvider extends DefaultScopeProvider {
     /**
      * Returns all resource declarations (Agents AND WorkObjects) from the containing Story AND from its referenced StoryBook.
      */
-    protected getWorkObjectScope(sentence: WorkObject) : Scope {
-        const story = sentence.$container.$container;
+    protected getResourceScope(resource: Resource) : Scope {
+        //
+        // PROBLEM: THE SCOPE RETURNED BY THIS METHOD IS SOMEHOW AUGMENTED BY THE GLOBAL SCOPE AND THUS HAS NOT EFFECT.
+        const activityClause = resource.$container;
+        if( ! isActivityClause(activityClause)) return EMPTY_SCOPE;
+        const activity = activityClause.$container;
+        const story = activity.$container;
         const book = story.book?.ref;
-        const outerScope = (book != null) ? this.createScopeForNodes(book.declarations) : EMPTY_SCOPE;
-        return this.createScopeForNodes(story.declarations, outerScope);
-    }
 
+        if(activityClause === activity.clauses[0])  { // the first clause must be a WorkObject --> limit scope
+            const outerScope = (book != null) ? this.createScopeForNodes(book.declarations.filter((d): d is WorkObjectDeclaration => isWorkObjectDeclaration(d))) : EMPTY_SCOPE;
+            return this.createScopeForNodes(story.declarations.filter((d): d is WorkObjectDeclaration => isWorkObjectDeclaration(d)), outerScope);
+
+        } else {
+            const outerScope = (book != null) ? this.createScopeForNodes(book.declarations) : EMPTY_SCOPE;
+            return this.createScopeForNodes(story.declarations, outerScope);
+        }
+    }
 }

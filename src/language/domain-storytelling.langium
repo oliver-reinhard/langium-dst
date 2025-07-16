@@ -14,7 +14,7 @@ interface StoryBook extends DeclarationScope {
 }
 interface Story extends DeclarationScope { 
     book: @StoryBook;
-    sentences: Sentence[];
+    activities: Activity[];
     notes: Note[];
 }
 
@@ -26,13 +26,21 @@ interface ResourceDeclaration {
 interface AgentDeclaration extends ResourceDeclaration { }
 interface WorkObjectDeclaration extends ResourceDeclaration { }
 
-interface Resource { }
-interface Agent extends Resource { 
-    agent: @AgentDeclaration;
+interface Activity {
+    initiator: Agent;
+    clauses: ActivityClause[];
+
 }
-interface WorkObject extends Resource {
-    activity: Activity;
+
+interface Resource { 
     resource: @ResourceDeclaration;
+}
+interface Agent extends Resource { }
+interface WorkObject extends Resource { }
+
+interface ActivityClause {
+    connector: Connector;
+    resource: Resource;
 }
 
 entry Model:
@@ -49,18 +57,17 @@ Icon:
 StoryBook returns StoryBook:
     'book' name=ID 
     'use' library=[IconLibrary:ID]
-    Declarations;
+    ResourceDeclarations;
 
 Story returns Story:
     'story' name=ID 
     'for' 'book' book=[StoryBook:ID]
-    Declarations  
-    'tell' (sentences+=Sentence)*
+    ResourceDeclarations  
+    'tell' (activities+=Activity)*
     notes+=Note*;
 
-fragment Declarations:
+fragment ResourceDeclarations:
     'introduce' declarations+=(AgentDeclaration | WorkObjectDeclaration)* ;
-
 
 AgentDeclaration returns AgentDeclaration:
     'agent' Declaration;
@@ -71,23 +78,26 @@ WorkObjectDeclaration returns WorkObjectDeclaration:
 fragment Declaration:
     name=ID 'icon' ':' icon=[Icon:ID] ('description' ':' description=STRING)? ';'; 
 
-Sentence:
-    '-' initiator=[AgentDeclaration:ID] workObjects+=WorkObjectActivity (workObjects+=ResourceActivity)* ';';
+Activity returns Activity:
+    '-' initiator=Agent (clauses+=ActivityClause)+ ';';
 
-Activity:
-    name=ID | label=STRING;
+ActivityClause returns ActivityClause:
+    connector=Connector resource=Resource;
 
-WorkObjectActivity returns WorkObject:
-    activity=Activity resource=[WorkObjectDeclaration:ID];
+Connector:
+    name=ID | label=STRING;
 
-ResourceActivity returns WorkObject:
-    activity=Activity resource=[ResourceDeclaration:ID];
+Agent returns Agent:
+    resource=[AgentDeclaration:ID];
+
+Resource returns Resource:
+    resource=[ResourceDeclaration:ID];
 
 Note:
     'note' text=STRING 
-    (connectors+=Connector)+ ';';
+    (links+=NoteLink)+ ';';
 
-Connector:
+NoteLink:
    '-->' resource=[Resource:ID];
 
 hidden terminal WS: /\s+/;
