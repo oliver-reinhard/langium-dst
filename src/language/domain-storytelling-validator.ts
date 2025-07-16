@@ -66,21 +66,21 @@ export class DomainStorytellingValidator {
 
     checkNoIntermediateAgents(activity: Activity, accept: ValidationAcceptor): void {
         for (var i=0; i< activity.clauses.length-1; i++) {
-            const obj = activity.clauses[i].resource?.resource.ref;
+            const obj = activity.clauses[i].resource?.declaration.ref;
             if (isAgentDeclaration(obj)) {
-                accept('error', 'Only the last element of the activity chain can be an agent.', { node: activity.clauses[i].resource, property: 'resource'});
+                accept('error', 'Only the last element of the activity chain can be an agent.', { node: activity.clauses[i].resource, property: 'declaration'});
             }
         }
-        if(activity.clauses.length === 1 && isAgentDeclaration(activity.clauses[0].resource?.resource.ref)) {
-            accept('error', 'An intermediate work object is needed before connecting to an agent.', { node: activity.clauses[0].resource, property: 'resource'});
+        if(activity.clauses.length === 1 && isAgentDeclaration(activity.clauses[0].resource?.declaration.ref)) {
+            accept('error', 'An intermediate work object is needed before connecting to an agent.', { node: activity.clauses[0].resource, property: 'declaration'});
         }
     }
 
     checkMultipleRecipients(clause:ActivityClause, accept: ValidationAcceptor): void {
         if(clause.moreRecipients.length > 0) {
-            const decl = clause.resource.resource.ref;
+            const decl = clause.resource.declaration.ref;
             if (isWorkObjectDeclaration(decl)) {
-                accept('error', 'All recipients at the end of the activity chain must be agents.', { node: clause.resource, property: 'resource'});
+                accept('error', 'All recipients at the end of the activity chain must be agents.', { node: clause.resource, property: 'declaration'});
             }
         }
     }

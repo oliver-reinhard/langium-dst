@@ -20,11 +20,11 @@ export class DomainStorytellingScopeProvider extends DefaultScopeProvider {
             return this.getIconScope(context, container);
         }
 
-        if (context.property === 'resource' && isAgent(container)) {
+        if (context.property === 'declaration' && isAgent(container)) {
             return this. getAgentScope(container);
         }
         
-        if (context.property === 'resource' && isResource(container)) {
+        if (context.property === 'declaration' && isResource(container)) {
             return this. getResourceScope(container);
         }
 
@@ -58,8 +58,6 @@ export class DomainStorytellingScopeProvider extends DefaultScopeProvider {
      * Returns all resource declarations (Agents AND WorkObjects) from the containing Story AND from its referenced StoryBook.
      */
     protected getResourceScope(resource: Resource) : Scope {
-        //
-        // PROBLEM: THE SCOPE RETURNED BY THIS METHOD IS SOMEHOW AUGMENTED BY THE GLOBAL SCOPE AND THUS HAS NOT EFFECT.
         const story = resource.$container?.$container?.$container;
         if( ! isStory(story)) return EMPTY_SCOPE;
         const book = story.book?.ref;

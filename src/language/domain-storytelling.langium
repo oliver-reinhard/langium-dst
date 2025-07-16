@@ -33,12 +33,12 @@ interface Activity {
 
 interface ActivityClause {
     connector: Connector;
-    resource: Resource;
+    resource: Resource;  // work object or agent (=recipient)
     moreRecipients: Agent[];
 }
 
 interface Resource { 
-    resource: @ResourceDeclaration;
+    declaration: @ResourceDeclaration;
 }
 interface Agent extends Resource { }
 interface WorkObject extends Resource { }
@@ -89,10 +89,10 @@ Connector:
     name=ID | label=STRING;
 
 Agent returns Agent:
-    resource=[AgentDeclaration:ID];
+    declaration=[AgentDeclaration:ID];
 
 Resource returns Resource:
-    resource=[ResourceDeclaration:ID];
+    declaration=[ResourceDeclaration:ID];
 
 Note:
     'note' text=STRING 
