@@ -16,7 +16,7 @@ tell
     - Fox reads Paper to Mouse & Elephant & Rabbit;
     // failing validations:
     - Fox calls Mouse;
-    - Fox reads Paper to Mouse and Elephant;
+    - Fox reads Paper (1) to Mouse and Elephant;
     - Fox reads Paper to Mail & Elephant;
     - Mouse Reads Paper to Elephant;
     - Mouse "Reads" Paper to Elephant;

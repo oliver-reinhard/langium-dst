@@ -10,7 +10,7 @@ export function registerValidationChecks(services: DomainStorytellingServices) {
     const validator = services.validation.DomainStorytellingValidator;
     const checks: ValidationChecks<DomainStorytellingAstType> = {
         DeclarationScope: validator.checkUniqueResourceDeclarationName,
-        Story: validator.checkResourceDeclarationOverride,
+        Story: validator.checkStory,
         ResourceDeclaration: validator.checkResourceDeclarationStartsWithUpper,
         Activity: validator.checkNoIntermediateAgents,
         ActivityClause: validator.checkMultipleRecipients,
@@ -33,6 +33,11 @@ export class DomainStorytellingValidator {
         });
     }
 
+    checkStory(story: Story, accept: ValidationAcceptor): void {
+        this.checkResourceDeclarationOverride(story, accept);
+        this.checkFootnoteNumbersUnique(story, accept);
+    }
+
     checkResourceDeclarationOverride(story: Story, accept: ValidationAcceptor): void {
         const book = story.book?.ref;
         if (book != null) {
@@ -45,21 +50,21 @@ export class DomainStorytellingValidator {
         }
     }
 
+    checkFootnoteNumbersUnique(story:Story, accept: ValidationAcceptor): void {
+        const reported = new Set();
+        story.footnotes.forEach(note => {
+            if (reported.has(note.name)) {
+                accept('error', `Duplicate footnote index '${note.name}'.`, {node: note, property: 'name'});
+            }
+            reported.add(note.name);
+        });
+    }
+
     checkResourceDeclarationStartsWithUpper(resource: ResourceDeclaration, accept: ValidationAcceptor): void {
         if (resource.name) {
             const firstChar = resource.name.substring(0, 1);
             if (firstChar.toUpperCase() !== firstChar) {
                 accept('warning', 'Agents and work object names should start with an uppercase letter.', { node: resource, property: 'name' });
-            }
-        }
-    }
-
-    checkConnectorStartsWithLower(connector: Connector, accept: ValidationAcceptor): void {
-        const ident = connector.name ? connector.name : connector.label;
-        if (ident) {
-            const firstChar = ident.substring(0, 1);
-            if (firstChar.toLowerCase() !== firstChar) {
-                accept('warning', 'Connector names should start with a lowercase letter.', { node: connector});
             }
         }
     }
@@ -81,6 +86,16 @@ export class DomainStorytellingValidator {
             const decl = clause.resource.declaration.ref;
             if (isWorkObjectDeclaration(decl)) {
                 accept('error', 'All recipients at the end of the activity chain must be agents.', { node: clause.resource, property: 'declaration'});
+            }
+        }
+    }
+
+    checkConnectorStartsWithLower(connector: Connector, accept: ValidationAcceptor): void {
+        const ident = connector.name ? connector.name : connector.label;
+        if (ident) {
+            const firstChar = ident.substring(0, 1);
+            if (firstChar.toLowerCase() !== firstChar) {
+                accept('warning', 'Connector names should start with a lowercase letter.', { node: connector});
             }
         }
     }

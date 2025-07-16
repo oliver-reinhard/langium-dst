@@ -27,7 +27,7 @@ export class DomainStorytellingScopeProvider extends DefaultScopeProvider {
         if (context.property === 'declaration' && isResource(container)) {
             return this. getResourceScope(container);
         }
-
+        
         return super.getScope(context);
     }
 

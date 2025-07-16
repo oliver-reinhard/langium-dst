@@ -11,7 +11,7 @@
             "request": "launch",
             "args": [
                 "--extensionDevelopmentPath=${workspaceFolder}",
-                "${workspaceFolder}/example"
+                "${workspaceFolder}/examples"
             ],
             "sourceMaps": true,
             "outFiles": [

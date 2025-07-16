@@ -15,7 +15,7 @@ interface StoryBook extends DeclarationScope {
 interface Story extends DeclarationScope { 
     book: @StoryBook;
     activities: Activity[];
-    notes: Note[];
+    footnotes: Footnote[];
 }
 
 interface ResourceDeclaration {
@@ -39,10 +39,20 @@ interface ActivityClause {
 
 interface Resource { 
     declaration: @ResourceDeclaration;
+    footnoteLinks?: FootnoteLinks;
 }
 interface Agent extends Resource { }
 interface WorkObject extends Resource { }
 
+interface Connector {
+    name?: string;
+    label?: string;
+    footnoteLinks?: FootnoteLinks;
+}
+
+//
+// -------- Grammar ---------
+//
 entry Model:
     file=(IconLibrary |  StoryBook | Story);
 
@@ -52,7 +62,7 @@ IconLibrary returns IconLibrary:
 
 Icon:
     'icon' name=ID 
-    ('url' ':' url=STRING)? ';';
+    ('url' ':' url=STRING)?;
 
 StoryBook returns StoryBook:
     'book' name=ID 
@@ -64,7 +74,7 @@ Story returns Story:
     'for' 'book' book=[StoryBook:ID]
     ResourceDeclarations?
     'tell' (activities+=Activity)*
-    notes+=Note*;
+    ('footnotes' footnotes+=Footnote+)?;
 
 fragment ResourceDeclarations:
     'introduce' declarations+=(AgentDeclaration | WorkObjectDeclaration)+;
@@ -76,34 +86,38 @@ WorkObjectDeclaration returns WorkObjectDeclaration:
     'work' 'object' Declaration;
 
 fragment Declaration:
-    name=ID 'icon' ':' icon=[Icon:ID] ('description' ':' description=STRING)? ';'; 
+    name=ID 'icon' ':' icon=[Icon:ID] ('description' ':' description=STRING)?; 
 
 Activity returns Activity:
-    '-' initiator=Agent (clauses+=ActivityClause)+ ';';
+    '-' initiator=Agent (clauses+=ActivityClause)+;
 
 ActivityClause returns ActivityClause:
     // only the last clause in an activity can have multiple recipients AND only, if the resource of the clause is an Agent
     connector=Connector resource=Resource ('&' moreRecipients+=Agent)*;
 
-Connector:
-    name=ID | label=STRING;
-
 Agent returns Agent:
-    declaration=[AgentDeclaration:ID];
+    declaration=[AgentDeclaration:ID]
+    footnoteLinks=FootnoteLinks?;
 
-Resource returns Resource:
-    declaration=[ResourceDeclaration:ID];
+// work object or agent (=recipient)
+Resource returns Resource: 
+    declaration=[ResourceDeclaration:ID]
+    footnoteLinks=FootnoteLinks?;
 
-Note:
-    'note' text=STRING 
-    (links+=NoteLink)+ ';';
+Connector returns Connector:
+    (name=ID | label=STRING)
+    footnoteLinks=FootnoteLinks?;
 
-NoteLink:
-   '-->' resource=[Resource:ID];
+Footnote:
+    name=INDEX ':' text=STRING;
+
+FootnoteLinks:
+   '(' links+=[Footnote:INDEX] (',' links+=[Footnote:INDEX])* ')';
 
 hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
-terminal INT returns number: /[0-9]+/;
+// terminal INT returns number: /[0-9]+/;
+terminal INDEX: /[0-9]+/;
 terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
 
 hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;

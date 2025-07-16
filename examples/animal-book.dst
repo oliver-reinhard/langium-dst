@@ -1,0 +1,8 @@
+book Animal_Book 
+use Animals
+introduce
+    agent Elephant icon: Elephant_Icon
+    agent Rabbit icon: Rabbit_Icon
+
+    work object Paper icon: Paper_Icon
+    work object Mail icon: Mail_Icon
