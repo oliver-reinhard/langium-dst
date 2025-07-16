@@ -29,7 +29,12 @@ interface WorkObjectDeclaration extends ResourceDeclaration { }
 interface Activity {
     initiator: Agent;
     clauses: ActivityClause[];
+}
 
+interface ActivityClause {
+    connector: Connector;
+    resource: Resource;
+    moreRecipients: Agent[];
 }
 
 interface Resource { 
@@ -37,11 +42,6 @@ interface Resource {
 }
 interface Agent extends Resource { }
 interface WorkObject extends Resource { }
-
-interface ActivityClause {
-    connector: Connector;
-    resource: Resource;
-}
 
 entry Model:
     file=(IconLibrary |  StoryBook | Story);
@@ -57,17 +57,17 @@ Icon:
 StoryBook returns StoryBook:
     'book' name=ID 
     'use' library=[IconLibrary:ID]
-    ResourceDeclarations;
+    ResourceDeclarations?;
 
 Story returns Story:
     'story' name=ID 
     'for' 'book' book=[StoryBook:ID]
-    ResourceDeclarations  
+    ResourceDeclarations?
     'tell' (activities+=Activity)*
     notes+=Note*;
 
 fragment ResourceDeclarations:
-    'introduce' declarations+=(AgentDeclaration | WorkObjectDeclaration)* ;
+    'introduce' declarations+=(AgentDeclaration | WorkObjectDeclaration)+;
 
 AgentDeclaration returns AgentDeclaration:
     'agent' Declaration;
@@ -82,7 +82,8 @@ Activity returns Activity:
     '-' initiator=Agent (clauses+=ActivityClause)+ ';';
 
 ActivityClause returns ActivityClause:
-    connector=Connector resource=Resource;
+    // only the last clause in an activity can have multiple recipients AND only, if the resource of the clause is an Agent
+    connector=Connector resource=Resource ('&' moreRecipients+=Agent)*;
 
 Connector:
     name=ID | label=STRING;

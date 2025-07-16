@@ -6,7 +6,7 @@
 
 import type { ReferenceInfo, Scope } from 'langium';
 import { DefaultScopeProvider, EMPTY_SCOPE } from 'langium';
-import { Agent, AgentDeclaration, isActivityClause, isAgent, isAgentDeclaration, isResource, isResourceDeclaration, isStory, isStoryBook, isWorkObjectDeclaration, Resource, ResourceDeclaration, WorkObjectDeclaration } from './generated/ast.js';
+import { Agent, AgentDeclaration, isActivity, isAgent, isAgentDeclaration, isResource, isResourceDeclaration, isStory, isStoryBook, Resource, ResourceDeclaration } from './generated/ast.js';
 
 /**
  * Special scope provider that matches symbol names regardless of lowercase or uppercase.
@@ -47,7 +47,7 @@ export class DomainStorytellingScopeProvider extends DefaultScopeProvider {
      * Returns all Agent declarations from the containing Story AND from its referenced StoryBook.
      */
     protected getAgentScope(agent: Agent) : Scope {
-        const story = agent.$container.$container;
+        const story = isActivity(agent.$container.$container) ? agent.$container.$container.$container : agent.$container.$container;
         const book = story.book?.ref;
         const outerScope = (book != null) ? this.createScopeForNodes(book.declarations.filter((d): d is AgentDeclaration => isAgentDeclaration(d))) : EMPTY_SCOPE;
         return this.createScopeForNodes(story.declarations.filter((a): a is AgentDeclaration => isAgentDeclaration(a)), outerScope);
@@ -60,19 +60,11 @@ export class DomainStorytellingScopeProvider extends DefaultScopeProvider {
     protected getResourceScope(resource: Resource) : Scope {
         //
         // PROBLEM: THE SCOPE RETURNED BY THIS METHOD IS SOMEHOW AUGMENTED BY THE GLOBAL SCOPE AND THUS HAS NOT EFFECT.
-        const activityClause = resource.$container;
-        if( ! isActivityClause(activityClause)) return EMPTY_SCOPE;
-        const activity = activityClause.$container;
-        const story = activity.$container;
+        const story = resource.$container?.$container?.$container;
+        if( ! isStory(story)) return EMPTY_SCOPE;
         const book = story.book?.ref;
-
-        if(activityClause === activity.clauses[0])  { // the first clause must be a WorkObject --> limit scope
-            const outerScope = (book != null) ? this.createScopeForNodes(book.declarations.filter((d): d is WorkObjectDeclaration => isWorkObjectDeclaration(d))) : EMPTY_SCOPE;
-            return this.createScopeForNodes(story.declarations.filter((d): d is WorkObjectDeclaration => isWorkObjectDeclaration(d)), outerScope);
-
-        } else {
-            const outerScope = (book != null) ? this.createScopeForNodes(book.declarations) : EMPTY_SCOPE;
-            return this.createScopeForNodes(story.declarations, outerScope);
-        }
+        const outerScope = (book != null) ? this.createScopeForNodes(book.declarations) : EMPTY_SCOPE;
+        return this.createScopeForNodes(story.declarations, outerScope);
     }
+        
 }
