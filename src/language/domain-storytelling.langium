@@ -1,12 +1,12 @@
 grammar DomainStorytelling
 
-interface File {
+interface Model {
     name: string;
 }
-interface IconLibrary extends File {
+interface IconLibrary extends Model {
     icons: Icon[];
 }
-interface DeclarationScope extends File {
+interface DeclarationScope extends Model {
     declarations: ResourceDeclaration[];
 }
 interface StoryBook extends DeclarationScope { 
@@ -53,8 +53,8 @@ interface Connector {
 //
 // -------- Grammar ---------
 //
-entry Model:
-    file=(IconLibrary |  StoryBook | Story);
+entry Entry:
+    IconLibrary |  StoryBook | Story;
 
 IconLibrary returns IconLibrary:
     'icon' 'library' name=ID 
@@ -92,7 +92,7 @@ Activity returns Activity:
     '-' initiator=Agent (clauses+=ActivityClause)+;
 
 ActivityClause returns ActivityClause:
-    // only the last clause in an activity can have multiple recipients AND only, if the resource of the clause is an Agent
+    // only the last clause in an activity can have multiple recipients AND only if the resource of the clause is an Agent
     connector=Connector resource=Resource ('&' moreRecipients+=Agent)*;
 
 Agent returns Agent:

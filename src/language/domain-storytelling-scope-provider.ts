@@ -4,65 +4,92 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ReferenceInfo, Scope } from 'langium';
+import type { AstNode, ReferenceInfo, Scope } from 'langium';
 import { DefaultScopeProvider, EMPTY_SCOPE } from 'langium';
-import { Agent, AgentDeclaration, isActivity, isAgent, isAgentDeclaration, isResource, isResourceDeclaration, isStory, isStoryBook, Resource, ResourceDeclaration } from './generated/ast.js';
+import { Agent, AgentDeclaration, Footnote, Icon, IconLibrary, isAgent, isAgentDeclaration, isFootnoteLinks, isModel, isResource, isResourceDeclaration, isStory, isStoryBook, Model, Resource, ResourceDeclaration, Story, StoryBook } from './generated/ast.js';
 
 /**
  * Special scope provider that matches symbol names regardless of lowercase or uppercase.
  */
 export class DomainStorytellingScopeProvider extends DefaultScopeProvider {
 
+    private ICON_LIBRARY_TYPE = IconLibrary;
+    private STORY_BOOK_TYPE = StoryBook;
+    private ICON_TYPE = Icon;
+    private DECLARATION_TYPE = ResourceDeclaration;
+    private FOOTNOTE_TYPE = Footnote;
+
     override getScope(context: ReferenceInfo): Scope {
-        const container = context.container;
+        const referenceType = this.reflection.getReferenceType(context);
+        const referenceContainer = context.container;
 
-        if (context.property === 'icon' && isResourceDeclaration(container)) {
-            return this.getIconScope(context, container);
-        }
+        const model = this.getModel(referenceContainer);
+        if (isStory(model)) {
+            if (referenceContainer === model && referenceType == this.STORY_BOOK_TYPE) {
+                // default scope (top-level element):
+                return super.getScope(context);
+                
+            } else if (isResourceDeclaration(referenceContainer) && referenceType === this.ICON_TYPE) {
+                return this.getIconScope(referenceContainer, model, context);
 
-        if (context.property === 'declaration' && isAgent(container)) {
-            return this. getAgentScope(container);
-        }
-        
-        if (context.property === 'declaration' && isResource(container)) {
-            return this. getResourceScope(container);
-        }
-        
+            } else if (isAgent(referenceContainer) && referenceType === this.DECLARATION_TYPE) {
+                return this. getAgentScope(referenceContainer, model);
+
+            } else if (isResource(referenceContainer) && referenceType === this.DECLARATION_TYPE) {
+                return this. getResourceScope(referenceContainer, model);
+
+            } else if (isFootnoteLinks(referenceContainer) && referenceType === this.FOOTNOTE_TYPE) {
+                // default scope (top-level element):
+                return super.getScope(context);
+            }
+            
+        } else if (isStoryBook(model)) {
+            if (referenceContainer === model && referenceType == this.ICON_LIBRARY_TYPE) {
+                // default scope (top-level element):
+                return super.getScope(context);
+
+            } else  if (isResourceDeclaration(referenceContainer) && referenceType === this.ICON_TYPE) {
+                return this.getIconScope(referenceContainer, model, context);
+            }
+        } 
         return super.getScope(context);
     }
 
-    protected getIconScope(context: ReferenceInfo, resource: ResourceDeclaration): Scope {
-        const book = isStory(resource.$container) ? resource.$container.book.ref : (isStoryBook(resource.$container) ? resource.$container : null);
+    protected getIconScope(resource: ResourceDeclaration, model: Story | StoryBook, context: ReferenceInfo): Scope {
+        const book = isStory(model) ? model.book?.ref : model;
         if (book != null) {
             const iconLibrary = book.library.ref;
             if (iconLibrary != null) {
                 return this.createScopeForNodes(iconLibrary.icons);
             }
         }
-        return super.getScope(context);
+        return EMPTY_SCOPE;
     }
-
 
     /**
      * Returns all Agent declarations from the containing Story AND from its referenced StoryBook.
      */
-    protected getAgentScope(agent: Agent) : Scope {
-        const story = isActivity(agent.$container.$container) ? agent.$container.$container.$container : agent.$container.$container;
+    protected getAgentScope(agent: Agent, story: Story) : Scope {
         const book = story.book?.ref;
         const outerScope = (book != null) ? this.createScopeForNodes(book.declarations.filter((d): d is AgentDeclaration => isAgentDeclaration(d))) : EMPTY_SCOPE;
         return this.createScopeForNodes(story.declarations.filter((a): a is AgentDeclaration => isAgentDeclaration(a)), outerScope);
     }
 
-
     /**
      * Returns all resource declarations (Agents AND WorkObjects) from the containing Story AND from its referenced StoryBook.
      */
-    protected getResourceScope(resource: Resource) : Scope {
-        const story = resource.$container?.$container?.$container;
-        if( ! isStory(story)) return EMPTY_SCOPE;
+    protected getResourceScope(resource: Resource, story: Story) : Scope {
         const book = story.book?.ref;
         const outerScope = (book != null) ? this.createScopeForNodes(book.declarations) : EMPTY_SCOPE;
         return this.createScopeForNodes(story.declarations, outerScope);
+    }
+
+    protected getModel(node: AstNode): Model | undefined {
+        let container = node.$container;
+        while (container && !isModel(container)) {
+            container = container?.$container;
+        }
+        return container;
     }
         
 }

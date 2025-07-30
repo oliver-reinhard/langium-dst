@@ -1,5 +1,5 @@
 import type { ValidationAcceptor, ValidationChecks } from 'langium';
-import { Activity, ActivityClause, Connector, DeclarationScope, isAgentDeclaration, isWorkObjectDeclaration, Story, type DomainStorytellingAstType, type ResourceDeclaration } from './generated/ast.js';
+import { Activity, ActivityClause, Connector, DeclarationScope, isAgentDeclaration, isFootnote, isWorkObjectDeclaration, Story, type DomainStorytellingAstType, type ResourceDeclaration } from './generated/ast.js';
 import type { DomainStorytellingServices } from './domain-storytelling-module.js';
 
 /**
@@ -10,7 +10,11 @@ export function registerValidationChecks(services: DomainStorytellingServices) {
     const validator = services.validation.DomainStorytellingValidator;
     const checks: ValidationChecks<DomainStorytellingAstType> = {
         DeclarationScope: validator.checkUniqueResourceDeclarationName,
-        Story: validator.checkStory,
+        Story: [
+            validator.checkResourceDeclarationOverride,
+            validator.checkFootnoteNumbersUnique,
+            validator.checkUnreferencedFootnotes
+        ],
         ResourceDeclaration: validator.checkResourceDeclarationStartsWithUpper,
         Activity: validator.checkNoIntermediateAgents,
         ActivityClause: validator.checkMultipleRecipients,
@@ -33,11 +37,6 @@ export class DomainStorytellingValidator {
         });
     }
 
-    checkStory(story: Story, accept: ValidationAcceptor): void {
-        this.checkResourceDeclarationOverride(story, accept);
-        this.checkFootnoteNumbersUnique(story, accept);
-    }
-
     checkResourceDeclarationOverride(story: Story, accept: ValidationAcceptor): void {
         const book = story.book?.ref;
         if (book != null) {
@@ -58,6 +57,22 @@ export class DomainStorytellingValidator {
             }
             reported.add(note.name);
         });
+    }
+
+    checkUnreferencedFootnotes(story:Story, accept: ValidationAcceptor): void {
+        const allReferences = story.$document?.references;
+        if (allReferences != null) {
+            const allFootnotes = new Set(story.footnotes);
+            for (let ref of allReferences) {
+                const node = ref.$nodeDescription?.node;
+                if (isFootnote(node)) {
+                    allFootnotes.delete(node);
+                }
+            }
+            for(let footnote of allFootnotes) {
+                accept('warning', `Unreferenced footnote '${footnote.name}'.`, {node: footnote, property: 'name'});
+            }
+        }
     }
 
     checkResourceDeclarationStartsWithUpper(resource: ResourceDeclaration, accept: ValidationAcceptor): void {
@@ -85,7 +100,7 @@ export class DomainStorytellingValidator {
         if(clause.moreRecipients.length > 0) {
             const decl = clause.resource.declaration.ref;
             if (isWorkObjectDeclaration(decl)) {
-                accept('error', 'All recipients at the end of the activity chain must be agents.', { node: clause.resource, property: 'declaration'});
+                accept('error', 'Multiple recipients at the end of the activity chain must all be agents.', { node: clause.resource, property: 'declaration'});
             }
         }
     }
@@ -99,5 +114,4 @@ export class DomainStorytellingValidator {
             }
         }
     }
-
 }

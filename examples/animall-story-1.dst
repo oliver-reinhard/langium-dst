@@ -10,17 +10,20 @@ introduce
     agent Elephant icon: Elephant_Icon
 
 tell
+    - Fox reads_the Paper
     - Fox sends Paper via Mail to Elephant
     - Rabbit "writes on" Paper with Pencil to Fox
     - Rabbit writes_on Paper with Pencil to Fox
-    - Fox (1,2) reads Paper (1) to Mouse & Elephant & Rabbit
-    - Elephant(1) reads(2) Paper(3) in Mail to Fox (1,2)
+    - Fox reads Paper to Mouse & Elephant & Rabbit
+    - Elephant(1) reads(2) Paper(3) in Mail to Fox(1,2)
     // failing validations:
+    - Paper sends Mail
     - Fox calls Mouse
     - Fox reads Paper to Mouse and Elephant
     - Fox reads Paper to Mail & Elephant
     - Mouse Reads Paper to Elephant
     - Mouse "Reads" Paper to Elephant
+    - Mouse (5) has_no Paper
 
 footnotes
      1: "Never mind"
@@ -28,3 +31,4 @@ footnotes
      3: "Not again"
      // failing validations:
      3: "Duplicate"
+     4: "Unreferenced footnote"
