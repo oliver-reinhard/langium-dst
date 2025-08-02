@@ -3,19 +3,27 @@ for book Animal_Book
 
 introduce
     agent Fox icon: Fox_Icon
-    agent Mouse icon: Mouse_Icon
+    agent Mouse plural: Mice icon: Mouse_Icon
     work object Pencil icon: Pencil_Icon
+    work object Trap icon: Trap_Icon
     // failing validations:
+    agent lion icon: Lion_Icon
     agent Fox icon: Fox_Icon
-    agent Elephant icon: Elephant_Icon
+    agent Elephant icon: Elephant_Icon 
 
-tell
+await 
+    + Fox* "are hungry of" Mouse* "at any time"
+    + "There is at least 1" Mouse "in the" Trap "of the" Fox
+    // OR 
+    // + Fox is Hungry
+
+act 
     - Fox reads_the Paper
     - Fox sends Paper via Mail to Elephant
     - Rabbit "writes on" Paper with Pencil to Fox
     - Rabbit writes_on Paper with Pencil to Fox
     - Fox reads Paper to Mouse & Elephant & Rabbit
-    - Elephant(1) reads(2) Paper(3) in Mail to Fox(1,2)
+    - Elephant(1) reads(2) Paper(3) "in today's"(1) Mail to Fox(1,2)
     // failing validations:
     - Paper sends Mail
     - Fox calls Mouse
@@ -25,6 +33,9 @@ tell
     - Mouse "Reads" Paper to Elephant
     - Mouse (5) has_no Paper
 
+accomplish 
+    + Fox* "are not hungry"
+    
 footnotes
      1: "Never mind"
      2: "Start all over again"

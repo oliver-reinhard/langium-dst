@@ -1,5 +1,5 @@
 import type { ValidationAcceptor, ValidationChecks } from 'langium';
-import { Activity, ActivityClause, Connector, DeclarationScope, isAgentDeclaration, isFootnote, isWorkObjectDeclaration, Story, type DomainStorytellingAstType, type ResourceDeclaration } from './generated/ast.js';
+import { Activity, ActivityClause, Connector, DeclarationScope, Icon, isAgentDeclaration, isFootnote, isWorkObjectDeclaration, Story, type DomainStorytellingAstType, type ResourceDeclaration } from './generated/ast.js';
 import type { DomainStorytellingServices } from './domain-storytelling-module.js';
 
 /**
@@ -18,7 +18,8 @@ export function registerValidationChecks(services: DomainStorytellingServices) {
         ResourceDeclaration: validator.checkResourceDeclarationStartsWithUpper,
         Activity: validator.checkNoIntermediateAgents,
         ActivityClause: validator.checkMultipleRecipients,
-        Connector: validator.checkConnectorStartsWithLower
+        Connector: validator.checkConnectorStartsWithLower,
+        Icon: validator.checkIconDefinitionStartsWithUpper
     };
     registry.register(checks, validator);
 }
@@ -71,6 +72,15 @@ export class DomainStorytellingValidator {
             }
             for(let footnote of allFootnotes) {
                 accept('warning', `Unreferenced footnote '${footnote.name}'.`, {node: footnote, property: 'name'});
+            }
+        }
+    }
+
+    checkIconDefinitionStartsWithUpper(icon: Icon, accept: ValidationAcceptor): void {
+        if (icon.name) {
+            const firstChar = icon.name.substring(0, 1);
+            if (firstChar.toUpperCase() !== firstChar) {
+                accept('warning', 'Icon names should start with an uppercase letter.', { node: icon, property: 'name' });
             }
         }
     }

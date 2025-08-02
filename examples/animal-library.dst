@@ -4,7 +4,12 @@ define
     icon Rabbit_Icon
     icon Elephant_Icon
     icon Mouse_Icon
+    icon Lion_Icon
 
     icon Paper_Icon
     icon Pencil_Icon
     icon Mail_Icon
+    icon Trap_Icon
+
+    // warning
+    icon snake_Icon

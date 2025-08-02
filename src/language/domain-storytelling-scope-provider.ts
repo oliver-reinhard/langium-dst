@@ -41,6 +41,7 @@ export class DomainStorytellingScopeProvider extends DefaultScopeProvider {
             } else if (isFootnoteLinks(referenceContainer) && referenceType === this.FOOTNOTE_TYPE) {
                 // default scope (top-level element):
                 return super.getScope(context);
+                // return this.createScopeForNodes(model.footnotes);
             }
             
         } else if (isStoryBook(model)) {
@@ -90,6 +91,5 @@ export class DomainStorytellingScopeProvider extends DefaultScopeProvider {
             container = container?.$container;
         }
         return container;
-    }
-        
+    }   
 }
