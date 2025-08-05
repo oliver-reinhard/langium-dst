@@ -23,6 +23,7 @@ act
     - Rabbit "writes on" Paper with Pencil to Fox
     - Rabbit writes_on Paper with Pencil to Fox
     - Fox reads Paper to Mouse & Elephant & Rabbit
+    - story Animal_Story_2
     - Elephant(1) reads(2) Paper(3) "in today's"(1) Mail to Fox(1,2)
     // failing validations:
     - Paper sends Mail
@@ -31,6 +32,7 @@ act
     - Fox reads Paper to Mail & Elephant
     - Mouse Reads Paper to Elephant
     - Mouse "Reads" Paper to Elephant
+    - story Animal_Story_1
     - Mouse (5) has_no Paper
 
 accomplish 

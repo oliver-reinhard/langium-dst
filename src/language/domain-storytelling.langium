@@ -34,12 +34,19 @@ interface ExpressionClause {
     resource?: Resource
 }
 
-interface Activity {
+
+interface Activity { }
+
+interface AgentActivity extends Activity {
     initiator: Agent
-    clauses: ActivityClause[]
+    clauses: AgentActivityClause[]
 }
 
-interface ActivityClause {
+interface StoryDelegation extends Activity {
+    story: @Story
+}
+
+interface AgentActivityClause {
     connector: Connector
     resource: Resource  // work object or agent (=recipient)
     moreRecipients: Agent[]
@@ -123,9 +130,15 @@ ExpressionResource returns ExpressionClause:
 
 // ---
 Activity returns Activity:
-    '-' initiator=Agent (clauses+=ActivityClause)+;
+    AgentActivity | StoryDelegation;
 
-ActivityClause returns ActivityClause:
+AgentActivity returns AgentActivity:
+    '-' initiator=Agent (clauses+=AgentActivityClause)+;
+
+StoryDelegation returns StoryDelegation:
+    '-' 'story' story=[Story];
+
+AgentActivityClause returns AgentActivityClause:
     // only the last clause in an activity can have multiple recipients AND only if the resource of the clause is an Agent
     connector=Connector resource=Resource ('&' moreRecipients+=Agent)*;
 

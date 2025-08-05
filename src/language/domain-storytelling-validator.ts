@@ -1,5 +1,5 @@
-import type { ValidationAcceptor, ValidationChecks } from 'langium';
-import { Activity, ActivityClause, Connector, DeclarationScope, Icon, isAgentDeclaration, isFootnote, isWorkObjectDeclaration, Story, type DomainStorytellingAstType, type ResourceDeclaration } from './generated/ast.js';
+import type { AstNode, ValidationAcceptor, ValidationChecks } from 'langium';
+import { AgentActivity, AgentActivityClause, Connector, DeclarationScope, Icon, isAgentDeclaration, isFootnote, isModel, isStory, isWorkObjectDeclaration, Model, Story, StoryDelegation, type DomainStorytellingAstType, type ResourceDeclaration } from './generated/ast.js';
 import type { DomainStorytellingServices } from './domain-storytelling-module.js';
 
 /**
@@ -16,8 +16,9 @@ export function registerValidationChecks(services: DomainStorytellingServices) {
             validator.checkUnreferencedFootnotes
         ],
         ResourceDeclaration: validator.checkResourceDeclarationStartsWithUpper,
-        Activity: validator.checkNoIntermediateAgents,
-        ActivityClause: validator.checkMultipleRecipients,
+        AgentActivity: validator.checkNoIntermediateAgents,
+        AgentActivityClause: validator.checkMultipleRecipients,
+        StoryDelegation: validator.checkNoSelfReference,
         Connector: validator.checkConnectorStartsWithLower,
         Icon: validator.checkIconDefinitionStartsWithUpper
     };
@@ -50,6 +51,67 @@ export class DomainStorytellingValidator {
         }
     }
 
+    checkIconDefinitionStartsWithUpper(icon: Icon, accept: ValidationAcceptor): void {
+        if (icon.name) {
+            const firstChar = icon.name.substring(0, 1);
+            if (firstChar.toUpperCase() !== firstChar) {
+                accept('warning', 'Icon names should start with an uppercase letter.', { node: icon, property: 'name' });
+            }
+        }
+    }
+
+    checkResourceDeclarationStartsWithUpper(resource: ResourceDeclaration, accept: ValidationAcceptor): void {
+        if (resource.name) {
+            const firstChar = resource.name.substring(0, 1);
+            if (firstChar.toUpperCase() !== firstChar) {
+                accept('warning', 'Agents and work object names should start with an uppercase letter.', { node: resource, property: 'name' });
+            }
+        }
+    }
+
+    checkNoIntermediateAgents(activity: AgentActivity, accept: ValidationAcceptor): void {
+        for (var i=0; i< activity.clauses.length-1; i++) {
+            const obj = activity.clauses[i].resource?.declaration.ref;
+            if (isAgentDeclaration(obj)) {
+                accept('error', 'Only the last element of the activity chain can be an agent.', { node: activity.clauses[i].resource, property: 'declaration'});
+            }
+        }
+        if(activity.clauses.length === 1 && isAgentDeclaration(activity.clauses[0].resource?.declaration.ref)) {
+            accept('error', 'An intermediate work object is needed before connecting to an agent.', { node: activity.clauses[0].resource, property: 'declaration'});
+        }
+    }
+
+    checkMultipleRecipients(clause:AgentActivityClause, accept: ValidationAcceptor): void {
+        if(clause.moreRecipients.length > 0) {
+            const decl = clause.resource.declaration.ref;
+            if (isWorkObjectDeclaration(decl)) {
+                accept('error', 'Multiple recipients at the end of the activity chain must all be agents.', { node: clause.resource, property: 'declaration'});
+            }
+        }
+    }
+
+    checkConnectorStartsWithLower(connector: Connector, accept: ValidationAcceptor): void {
+        const ident = connector.name ? connector.name : connector.label;
+        if (ident) {
+            const firstChar = ident.substring(0, 1);
+            if (firstChar.toLowerCase() !== firstChar) {
+                accept('warning', 'Connector names should start with a lowercase letter.', { node: connector});
+            }
+        }
+    }
+
+    checkNoSelfReference(storyDelegation: StoryDelegation, accept: ValidationAcceptor): void {
+        const referencedStory = storyDelegation.story.ref;
+        if (isStory(referencedStory)) {
+            const model = this.getModel(storyDelegation);
+            if (isStory(model)) {
+                if (referencedStory === model) {
+                    accept('error', 'A story cannot reference itself', { node: storyDelegation, property: 'story'});
+                }
+            }
+        }
+    }
+
     checkFootnoteNumbersUnique(story:Story, accept: ValidationAcceptor): void {
         const reported = new Set();
         story.footnotes.forEach(note => {
@@ -75,53 +137,12 @@ export class DomainStorytellingValidator {
             }
         }
     }
-
-    checkIconDefinitionStartsWithUpper(icon: Icon, accept: ValidationAcceptor): void {
-        if (icon.name) {
-            const firstChar = icon.name.substring(0, 1);
-            if (firstChar.toUpperCase() !== firstChar) {
-                accept('warning', 'Icon names should start with an uppercase letter.', { node: icon, property: 'name' });
-            }
+    
+    protected getModel(node: AstNode): Model | undefined {
+        let container = node.$container;
+        while (container && !isModel(container)) {
+            container = container?.$container;
         }
-    }
-
-    checkResourceDeclarationStartsWithUpper(resource: ResourceDeclaration, accept: ValidationAcceptor): void {
-        if (resource.name) {
-            const firstChar = resource.name.substring(0, 1);
-            if (firstChar.toUpperCase() !== firstChar) {
-                accept('warning', 'Agents and work object names should start with an uppercase letter.', { node: resource, property: 'name' });
-            }
-        }
-    }
-
-    checkNoIntermediateAgents(activity: Activity, accept: ValidationAcceptor): void {
-        for (var i=0; i< activity.clauses.length-1; i++) {
-            const obj = activity.clauses[i].resource?.declaration.ref;
-            if (isAgentDeclaration(obj)) {
-                accept('error', 'Only the last element of the activity chain can be an agent.', { node: activity.clauses[i].resource, property: 'declaration'});
-            }
-        }
-        if(activity.clauses.length === 1 && isAgentDeclaration(activity.clauses[0].resource?.declaration.ref)) {
-            accept('error', 'An intermediate work object is needed before connecting to an agent.', { node: activity.clauses[0].resource, property: 'declaration'});
-        }
-    }
-
-    checkMultipleRecipients(clause:ActivityClause, accept: ValidationAcceptor): void {
-        if(clause.moreRecipients.length > 0) {
-            const decl = clause.resource.declaration.ref;
-            if (isWorkObjectDeclaration(decl)) {
-                accept('error', 'Multiple recipients at the end of the activity chain must all be agents.', { node: clause.resource, property: 'declaration'});
-            }
-        }
-    }
-
-    checkConnectorStartsWithLower(connector: Connector, accept: ValidationAcceptor): void {
-        const ident = connector.name ? connector.name : connector.label;
-        if (ident) {
-            const firstChar = ident.substring(0, 1);
-            if (firstChar.toLowerCase() !== firstChar) {
-                accept('warning', 'Connector names should start with a lowercase letter.', { node: connector});
-            }
-        }
-    }
+        return container;
+    } 
 }

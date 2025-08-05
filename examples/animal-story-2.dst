@@ -1,0 +1,6 @@
+story Animal_Story_2
+for book Animal_Book
+
+act
+- Rabbit reads Paper
+- Rabbit gives Paper to Elephant
