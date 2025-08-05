@@ -3,13 +3,13 @@ import { Command } from 'commander';
 import type { Model } from '../language/generated/ast.js';
 import { DomainStorytellingLanguageMetaData } from '../language/generated/module.js';
 import { extractAstNode } from './cli-util.js';
-import { generateJavaScript } from './generator.js';
 import { createDomainStorytellingServices } from '../language/domain-storytelling-module.js';
 import { extractDocument } from './cli-util.js';
 import { NodeFileSystem } from 'langium/node';
 import * as url from 'node:url';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { generateJSONfromAST } from './JSON-generator.js';
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 const packagePath = path.resolve(__dirname, '..', '..', 'package.json');
@@ -26,11 +26,11 @@ export default function(): void {
 
     const fileExtensions = DomainStorytellingLanguageMetaData.fileExtensions.join(', ');
     cmd
-        .command('generate')
+        .command('generateJSON')
         .argument('<file>', `source file (possible file extensions: ${fileExtensions})`)
         .option('-d, --destination <dir>', 'destination directory of generating')
-        .description('generates JavaScript code that prints "Hello, {name}!" for each greeting in a source file')
-        .action(generateAction);
+        .description('generates a JSON file that represents the AST')
+        .action(generateJSONAction);
 
     cmd.parse(process.argv);
 }
@@ -59,11 +59,11 @@ export const parseAndValidate = async (fileName: string): Promise<void> => {
     }
 }
 
-export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
+export const generateJSONAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
     const services = createDomainStorytellingServices(NodeFileSystem).DomainStorytelling;
     const model = await extractAstNode<Model>(fileName, services);
-    const generatedFilePath = generateJavaScript(model, fileName, opts.destination);
-    console.log(chalk.green(`JavaScript code generated successfully: ${generatedFilePath}`));
+    const generatedFilePath = generateJSONfromAST(model, fileName, opts.destination);
+    console.log(chalk.green(`Serialised AST as JSON successfully: ${generatedFilePath}`));
 };
 
 export type GenerateOptions = {
