@@ -14,22 +14,22 @@ introduce
 await 
     + Fox* "are hungry of" Mouse* "at any time"
     + "There is at least 1" Mouse "in the" Trap "of the" Fox
-    // OR 
-    // + Fox is Hungry
+    OR 
+    + Elephant "is tired"
 
 act 
     - Fox reads_the Paper
     - Fox sends Paper via Mail to Elephant
     - Rabbit "writes on" Paper with Pencil to Fox
     - Rabbit writes_on Paper with Pencil to Fox
-    - Fox reads Paper to Mouse & Elephant & Rabbit
+    - Fox reads Paper to Mouse + Elephant + Rabbit
     - story Animal_Story_2
     - Elephant(1) reads(2) Paper(3) "in today's"(1) Mail to Fox(1,2)
     // failing validations:
     - Paper sends Mail
     - Fox calls Mouse
     - Fox reads Paper to Mouse and Elephant
-    - Fox reads Paper to Mail & Elephant
+    - Fox reads Paper to Mail + Elephant
     - Mouse Reads Paper to Elephant
     - Mouse "Reads" Paper to Elephant
     - story Animal_Story_1

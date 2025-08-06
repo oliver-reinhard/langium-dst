@@ -29,7 +29,7 @@ export default function(): void {
         .command('generateJSON')
         .argument('<file>', `source file (possible file extensions: ${fileExtensions})`)
         .option('-d, --destination <dir>', 'destination directory of generating')
-        .description('generates a JSON file that represents the AST')
+        .description('generates a JSON file representing the AST')
         .action(generateJSONAction);
 
     cmd.parse(process.argv);

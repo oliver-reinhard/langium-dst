@@ -111,8 +111,7 @@ fragment Declaration:
 
 // ---
 BooleanExpression:
-    // conjunctions+=Conjunction ('OR' conjunctions+=Conjunction)*;
-    (andTerm+=AndTerm)+;
+    conjunctions+=Conjunction ('OR' conjunctions+=Conjunction)*;
 
 Conjunction:
     (andTerm+=AndTerm)+;
@@ -140,7 +139,7 @@ StoryDelegation returns StoryDelegation:
 
 AgentActivityClause returns AgentActivityClause:
     // only the last clause in an activity can have multiple recipients AND only if the resource of the clause is an Agent
-    connector=Connector resource=Resource ('&' moreRecipients+=Agent)*;
+    connector=Connector resource=Resource ('+' moreRecipients+=Agent)*;
 
 Agent returns Agent:
     declaration=[AgentDeclaration:ID] (plural?='*')?
