@@ -12,7 +12,7 @@ let document: LangiumDocument<Model> | undefined;
 
 beforeAll(async () => {
     services = createDomainStorytellingServices(EmptyFileSystem);
-    const doParse = parseHelper<Model>(services.DomainStorytelling);
+    const doParse = parseHelper<Model>(services.dst);
     parse = (input: string) => doParse(input, { validation: true });
 
     // activate the following if your linking test requires elements from a built-in library, for example

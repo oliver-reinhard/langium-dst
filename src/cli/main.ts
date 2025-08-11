@@ -44,7 +44,7 @@ export default function(): void {
  */
 export const parseAndValidate = async (fileName: string): Promise<void> => {
     // retrieve the services for our language
-    const services = createDomainStorytellingServices(NodeFileSystem).DomainStorytelling;
+    const services = createDomainStorytellingServices(NodeFileSystem).dst;
     // extract a document for our program
     const document = await extractDocument(fileName, services);
     // extract the parse result details
@@ -60,7 +60,7 @@ export const parseAndValidate = async (fileName: string): Promise<void> => {
 }
 
 export const generateJSONAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
-    const services = createDomainStorytellingServices(NodeFileSystem).DomainStorytelling;
+    const services = createDomainStorytellingServices(NodeFileSystem).dst;
     const model = await extractAstNode<Model>(fileName, services);
     const generatedFilePath = generateJSONfromAST(model, fileName, opts.destination);
     console.log(chalk.green(`Serialised AST as JSON successfully: ${generatedFilePath}`));

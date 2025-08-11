@@ -1,8 +1,10 @@
-import { type Module, inject } from 'langium';
-import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext, type LangiumServices, type LangiumSharedServices, type PartialLangiumServices } from 'langium/lsp';
+import { Module, inject } from 'langium';
+import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext, type PartialLangiumServices } from 'langium/lsp';
 import { DomainStorytellingScopeProvider } from './domain-storytelling-scope-provider.js';
 import { DomainStorytellingGeneratedModule, DomainStorytellingGeneratedSharedModule } from './generated/module.js';
 import { DomainStorytellingValidator, registerValidationChecks } from './domain-storytelling-validator.js';
+import { LangiumSprottyServices, LangiumSprottySharedServices, SprottyDiagramServices, SprottySharedModule } from 'langium-sprotty';
+import { DSTDiagramGenerator } from '../diagram/sprotty-model-generator.js';
 
 /**
  * Declaration of custom services - add your own service classes here.
@@ -17,19 +19,25 @@ export type DomainStorytellingAddedServices = {
  * Union of Langium default services and your custom services - use this as constructor parameter
  * of custom service classes.
  */
-export type DomainStorytellingServices = LangiumServices & DomainStorytellingAddedServices
+// original:
+// export type DomainStorytellingServices = LangiumServices & DomainStorytellingAddedServices
+
+export type DomainStorytellingServices = LangiumSprottyServices & DomainStorytellingAddedServices
 
 /**
  * Dependency injection module that overrides Langium default services and contributes the
  * declared custom services. The Langium defaults can be partially specified to override only
  * selected services, while the custom services must be fully specified.
  */
-export const DomainStorytellingModule: Module<DomainStorytellingServices, PartialLangiumServices & DomainStorytellingAddedServices> = {
+export const DomainStorytellingModule: Module<DomainStorytellingServices, PartialLangiumServices & SprottyDiagramServices & DomainStorytellingAddedServices> = {
     references: {
-        ScopeProvider: (services) => new DomainStorytellingScopeProvider(services)
+        ScopeProvider: (services) => new DomainStorytellingScopeProvider(services),
     },
     validation: {
-        DomainStorytellingValidator: () => new DomainStorytellingValidator()
+        DomainStorytellingValidator: () => new DomainStorytellingValidator(),
+    },
+    diagram: {
+        DiagramGenerator: services => new DSTDiagramGenerator(services),
     }
 };
 
@@ -49,24 +57,25 @@ export const DomainStorytellingModule: Module<DomainStorytellingServices, Partia
  * @returns An object wrapping the shared services and the language-specific services
  */
 export function createDomainStorytellingServices(context: DefaultSharedModuleContext): {
-    shared: LangiumSharedServices,
-    DomainStorytelling: DomainStorytellingServices
+    shared: LangiumSprottySharedServices,
+    dst: DomainStorytellingServices
 } {
     const shared = inject(
-        createDefaultSharedModule(context),
-        DomainStorytellingGeneratedSharedModule
-    );
-    const DomainStorytelling = inject(
-        createDefaultModule({ shared }),
-        DomainStorytellingGeneratedModule,
-        DomainStorytellingModule
-    );
-    shared.ServiceRegistry.register(DomainStorytelling);
-    registerValidationChecks(DomainStorytelling);
+        createDefaultSharedModule(context),         // infers as:  Module<LangiumSharedServices, LangiumDefaultSharedCoreServices & LangiumSharedLSPServices>
+        DomainStorytellingGeneratedSharedModule,     // infers as:  Module<LangiumSharedCoreServices, LangiumGeneratedSharedCoreServices>
+        SprottySharedModule
+    );                                              // returns: -> LangiumSharedServices (= superset of all others)
+    const dst = inject(
+        createDefaultModule({ shared }),            // infers as:  Module<LangiumServices, LangiumDefaultCoreServices & LangiumLSPServices>
+        DomainStorytellingGeneratedModule,          // infers as:  Module<LangiumCoreServices, LangiumGeneratedCoreServices>
+        DomainStorytellingModule                    // infers as:  Module<DomainStorytellingServices, { ... (PartialLangiumServices) ... } & SprottyDiagramServices & DomainStorytellingAddedServices>
+    );                                              // returns: -> DomainStorytellingServices (= superset of all others)
+    shared.ServiceRegistry.register(dst);
+    registerValidationChecks(dst);
     if (!context.connection) {
         // We don't run inside a language server
         // Therefore, initialize the configuration provider instantly
         shared.workspace.ConfigurationProvider.initialized({});
     }
-    return { shared, DomainStorytelling };
+    return { shared, dst };
 }

@@ -8,7 +8,7 @@ import { NodeFileSystem } from 'langium/node';
 export function generateJSONfromAST(model: Model, filePath: string, destination: string | undefined): string {
     const data = extractDestinationAndName(filePath, destination);
     const generatedFilePath = `${path.join(data.destination, data.name)}.json`;
-    const services = createDomainStorytellingServices(NodeFileSystem).DomainStorytelling;
+    const services = createDomainStorytellingServices(NodeFileSystem).dst;
 
     const serializedAst = services.serializer.JsonSerializer.serialize(model, { sourceText: true, textRegions: true });
    

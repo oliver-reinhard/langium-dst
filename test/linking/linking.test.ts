@@ -11,7 +11,7 @@ let document: LangiumDocument<Model> | undefined;
 
 beforeAll(async () => {
     services = createDomainStorytellingServices(EmptyFileSystem);
-    parse = parseHelper<Model>(services.DomainStorytelling);
+    parse = parseHelper<Model>(services.dst);
 
     // activate the following if your linking test requires elements from a built-in library, for example
     // await services.shared.workspace.WorkspaceManager.initializeWorkspace([]);
